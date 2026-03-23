@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculateur d'assurance vie — Securancia</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f9; min-height: 100vh; padding: 2rem 1rem 4rem; color: #1a1a1a; }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    .cover { border-radius: 16px; padding: 2.5rem 2rem; margin-bottom: 2rem; background: #01233F; }
+    .cover h1 { font-size: 22px; font-weight: 500; color: #fff; margin-bottom: 0.5rem; }
+    .cover p { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.6; }
+    .step-bar { display: flex; gap: 6px; margin-bottom: 2rem; }
+    .step-dot { flex: 1; height: 3px; border-radius: 99px; background: #dde1e7; transition: background 0.3s; }
+    .step-dot.active { background: #01233F; }
+    .step-dot.done { background: #1D9E75; }
+    .section { background: #fff; border: 0.5px solid #e0e4ea; border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .section-title { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1.25rem; }
+    .field { margin-bottom: 1.25rem; }
+    .field:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 14px; color: #1a1a1a; margin-bottom: 6px; font-weight: 500; }
+    .req { color: #e24b4a; margin-left: 2px; }
+    .hint { font-size: 12px; color: #888; margin-bottom: 8px; line-height: 1.5; }
+    .radio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .radio-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .radio-card { border: 0.5px solid #d0d5dd; border-radius: 8px; padding: 12px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; color: #1a1a1a; transition: border-color 0.15s, background 0.15s; user-select: none; background: #fff; }
+    .radio-card:hover { background: #f8f9fb; }
+    .radio-card.selected { border-color: #01233F; background: #e0eaf2; color: #01233F; }
+    .radio-dot { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #d0d5dd; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .radio-card.selected .radio-dot { border-color: #01233F; background: #01233F; }
+    .radio-card.selected .radio-dot::after { content:''; width:6px; height:6px; background:#fff; border-radius:50%; display:block; }
+    input[type=text], input[type=email], input[type=tel] { width: 100%; font-size: 14px; padding: 10px 12px; border: 0.5px solid #d0d5dd; border-radius: 8px; background: #fff; color: #1a1a1a; outline: none; transition: border-color 0.2s; }
+    input[type=text]:focus, input[type=email]:focus, input[type=tel]:focus { border-color: #01233F; }
+    .consent-row { display: flex; gap: 10px; align-items: flex-start; padding: 1rem; background: #f4f6f9; border-radius: 8px; cursor: pointer; border: 0.5px solid #e0e4ea; transition: border-color 0.15s; }
+    .consent-row:hover { border-color: #01233F; }
+    .consent-row input[type=checkbox] { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: #01233F; cursor: pointer; }
+    .consent-text { font-size: 13px; color: #444; line-height: 1.6; }
+    .result-card { border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem; background: #e0eaf2; border: 0.5px solid #b5d4f4; }
+    .result-label { font-size: 13px; color: #01233F; margin-bottom: 4px; }
+    .result-value { font-size: 36px; font-weight: 500; color: #01233F; }
+    .result-sub { font-size: 13px; color: #4a7a9b; margin-top: 4px; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+    .result-mini { background: #f4f6f9; border-radius: 8px; padding: 1rem; }
+    .result-mini .lbl { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .result-mini .val { font-size: 18px; font-weight: 500; color: #1a1a1a; }
+    .breakdown { background: #f4f6f9; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; }
+    .breakdown-title { font-size: 11px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .breakdown-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 0.5px solid #e0e4ea; }
+    .breakdown-row:last-child { border-bottom: none; font-weight: 500; padding-top: 8px; font-size: 14px; }
+    .breakdown-row .lbl { color: #888; }
+    .breakdown-row .val { color: #1a1a1a; }
+    .btn-primary { width: 100%; padding: 14px; background: #01233F; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+    .btn-primary:hover { background: #013a5c; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { background: #b5d4f4; cursor: not-allowed; }
+    .nav-row { display: flex; gap: 10px; margin-top: 1.5rem; }
+    .back-btn { flex-shrink: 0; width: 48px; padding: 14px; background: transparent; border: 0.5px solid #d0d5dd; border-radius: 8px; cursor: pointer; color: #888; font-size: 18px; }
+    .back-btn:hover { background: #f4f6f9; }
+    .success-wrap { text-align: center; padding: 2rem 1rem; }
+    .success-icon { width: 64px; height: 64px; background: #EAF3DE; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+    .success-icon svg { width: 32px; height: 32px; fill: #3B6D11; }
+    .success-wrap h2 { font-size: 20px; font-weight: 500; margin-bottom: 0.75rem; color: #01233F; }
+    .success-wrap p { font-size: 14px; color: #666; line-height: 1.7; }
+    .incomplete { font-size: 13px; color: #888; font-style: italic; margin-bottom: 1rem; }
+    .error-msg { font-size: 13px; color: #c0392b; text-align: center; padding: 0.75rem; background: #fdecea; border-radius: 8px; margin-top: 10px; display: none; }
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 480px) {
+      .radio-grid3 { grid-template-columns: 1fr 1fr; }
+      .result-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="cover">
+    <h1>Calculateur d'assurance vie</h1>
+    <p>Obtenez votre estimation de prime mensuelle en quelques secondes — sans frais, sans engagement.</p>
+  </div>
+
+  <div class="step-bar">
+    <div class="step-dot active" id="dot0"></div>
+    <div class="step-dot" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
+  </div>
+
+  <!-- PAGE 1 : Coordonnées + consentement -->
+  <div class="page active" id="page0">
+    <div class="section">
+      <div class="section-title">Vos coordonnées</div>
+      <div class="field">
+        <label>Nom complet <span class="req">*</span></label>
+        <input type="text" id="nom_complet" placeholder="Marie Tremblay">
+      </div>
+      <div class="field">
+        <label>Adresse courriel <span class="req">*</span></label>
+        <input type="email" id="email" placeholder="marie@exemple.com">
+      </div>
+      <div class="field">
+        <label>Numéro de téléphone <span class="req">*</span></label>
+        <input type="tel" id="tel" placeholder="514 123-4567">
+      </div>
+    </div>
+    <div class="section">
+      <div class="consent-row" onclick="if(event.target.type!=='checkbox'){document.getElementById('consent').checked=!document.getElementById('consent').checked}">
+        <input type="checkbox" id="consent">
+        <span class="consent-text">Je consens à être contacté(e) par un conseiller en sécurité financière afin d'obtenir une analyse personnalisée et de valider cette estimation.</span>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="goNext(0)">Continuer →</button>
+  </div>
+
+  <!-- PAGE 2 : Profil -->
+  <div class="page" id="page1">
+    <div class="section">
+      <div class="section-title">À propos de vous</div>
+      <div class="field">
+        <label>Sexe assigné à la naissance</label>
+        <div class="hint">Cette information a un impact sur la tarification de l'assurance.</div>
+        <div class="radio-grid">
+          <div class="radio-card" onclick="pick(this,'sexe','Homme',1)"><div class="radio-dot"></div>Homme</div>
+          <div class="radio-card" onclick="pick(this,'sexe','Femme',0.8)"><div class="radio-dot"></div>Femme</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Consommation de tabac</label>
+        <div class="radio-grid">
+          <div class="radio-card" onclick="pick(this,'tabac','Fumeur',2.4)"><div class="radio-dot"></div>Fumeur</div>
+          <div class="radio-card" onclick="pick(this,'tabac','Non-fumeur',1)"><div class="radio-dot"></div>Non-fumeur</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Âge</label>
+        <div class="radio-grid">
+          <div class="radio-card" onclick="pick(this,'age','25 - 29 ans',16)"><div class="radio-dot"></div>25 – 29 ans</div>
+          <div class="radio-card" onclick="pick(this,'age','30 - 34 ans',18)"><div class="radio-dot"></div>30 – 34 ans</div>
+          <div class="radio-card" onclick="pick(this,'age','35 - 39 ans',22)"><div class="radio-dot"></div>35 – 39 ans</div>
+          <div class="radio-card" onclick="pick(this,'age','40 - 44 ans',33)"><div class="radio-dot"></div>40 – 44 ans</div>
+          <div class="radio-card" onclick="pick(this,'age','45 - 49 ans',52)" style="grid-column: span 2;"><div class="radio-dot"></div>45 – 49 ans</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goBack(1)">←</button>
+      <button class="btn-primary" onclick="goNext(1)">Continuer →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3 : Protection + résultat + envoi -->
+  <div class="page" id="page2">
+    <div class="section">
+      <div class="section-title">Votre protection</div>
+      <div class="field">
+        <label>Durée de la protection</label>
+        <div class="radio-grid3">
+          <div class="radio-card" onclick="pick(this,'duree','20 ans',1)"><div class="radio-dot"></div>20 ans</div>
+          <div class="radio-card" onclick="pick(this,'duree','25 ans',1.15)"><div class="radio-dot"></div>25 ans</div>
+          <div class="radio-card" onclick="pick(this,'duree','30 ans',1.3)"><div class="radio-dot"></div>30 ans</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Montant d'assurance vie</label>
+        <div class="radio-grid3">
+          <div class="radio-card" onclick="pick(this,'montant','250 000 $',0)"><div class="radio-dot"></div>250 000 $</div>
+          <div class="radio-card" onclick="pick(this,'montant','300 000 $',1)"><div class="radio-dot"></div>300 000 $</div>
+          <div class="radio-card" onclick="pick(this,'montant','350 000 $',2)"><div class="radio-dot"></div>350 000 $</div>
+          <div class="radio-card" onclick="pick(this,'montant','400 000 $',3)"><div class="radio-dot"></div>400 000 $</div>
+          <div class="radio-card" onclick="pick(this,'montant','450 000 $',4)"><div class="radio-dot"></div>450 000 $</div>
+          <div class="radio-card" onclick="pick(this,'montant','500 000 $',5)"><div class="radio-dot"></div>500 000 $</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="result-block" style="display:none;">
+      <div class="result-card">
+        <div class="result-label">Prime mensuelle estimée</div>
+        <div class="result-value" id="est-price">—</div>
+        <div class="result-sub">Estimation indicative — sans engagement</div>
+      </div>
+
+
+    </div>
+    <div id="result-placeholder" class="incomplete">Sélectionnez la durée et le montant pour voir votre estimation.</div>
+
+    <div id="error-msg" class="error-msg">Une erreur est survenue lors de l'envoi. Veuillez réessayer.</div>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goBack(2)">←</button>
+      <button class="btn-primary" id="btn-submit" onclick="submit()">Voir mon prix et recevoir ma proposition →</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="page" id="page3">
+    <div class="success-wrap">
+      <div class="success-icon"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+      <h2>Votre estimation a été envoyée !</h2>
+      <p>Merci <strong id="merci-nom"></strong>.<br><br>Un email de confirmation vient d'être envoyé à votre adresse courriel.<br><br>Un conseiller Securancia vous contactera sous peu pour valider cette estimation et vous présenter une proposition personnalisée.</p>
+    </div>
+  </div>
+
+</div>
+<script>
+  emailjs.init('N3WlZzDWWP1LQV9Av');
+  var s = { sexe:null,sexeV:null,tabac:null,tabacV:null,age:null,ageV:null,duree:null,dureeV:null,montant:null,montantV:null };
+  var current = 0;
+  var monthly = 0;
+
+  function pick(el, field, label, val) {
+    el.parentElement.querySelectorAll('.radio-card').forEach(function(c){ c.classList.remove('selected'); });
+    el.classList.add('selected');
+    s[field] = label;
+    s[field+'V'] = val;
+    calc();
+  }
+
+  function calc() {
+    if (!s.ageV || !s.sexeV || !s.tabacV || !s.dureeV || s.montantV === null) return;
+    var base = s.ageV * s.sexeV * s.tabacV * s.dureeV;
+    var ajust = s.montantV * base * 0.18;
+    monthly = base + ajust;
+    // Ne PAS afficher le résultat ici — seulement après soumission
+  }
+
+  function showResult() {
+    document.getElementById('est-price').textContent = monthly.toFixed(2) + ' $ / mois';
+    document.getElementById('result-block').style.display = 'block';
+    document.getElementById('result-placeholder').style.display = 'none';
+  }
+
+  function goNext(from) {
+    if (from === 0) {
+      var nom = document.getElementById('nom_complet').value.trim();
+      var email = document.getElementById('email').value.trim();
+      var tel = document.getElementById('tel').value.trim();
+      var consent = document.getElementById('consent').checked;
+      if (!nom || !email || !tel) { alert('Veuillez remplir tous les champs de contact.'); return; }
+      if (!consent) { alert('Veuillez cocher la case de consentement pour continuer.'); return; }
+    }
+    if (from === 1 && (!s.sexe || !s.tabac || !s.age)) { alert('Veuillez compléter tous les champs.'); return; }
+    document.getElementById('page'+from).classList.remove('active');
+    current = from + 1;
+    document.getElementById('page'+current).classList.add('active');
+    updateDots();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function goBack(from) {
+    document.getElementById('page'+from).classList.remove('active');
+    current = from - 1;
+    document.getElementById('page'+current).classList.add('active');
+    updateDots();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function updateDots() {
+    for (var i = 0; i < 4; i++) {
+      var d = document.getElementById('dot'+i);
+      d.classList.remove('active','done');
+      if (i < current) d.classList.add('done');
+      else if (i === current) d.classList.add('active');
+    }
+  }
+
+  function submit() {
+    if (!s.duree || s.montantV === null) { alert('Veuillez sélectionner la durée et le montant.'); return; }
+    if (monthly === 0) { alert('Veuillez compléter toutes les options.'); return; }
+
+    // Afficher le résultat maintenant que le client a cliqué
+    showResult();
+    var nom = document.getElementById('nom_complet').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var tel = document.getElementById('tel').value.trim();
+    var btn = document.getElementById('btn-submit');
+    var errDiv = document.getElementById('error-msg');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours...';
+    errDiv.style.display = 'none';
+
+    var dureeAns = s.duree === '20 ans' ? 20 : s.duree === '25 ans' ? 25 : 30;
+    var params = {
+      nom: nom, prenom: nom, email: email, tel: tel,
+      sexe: s.sexe, tabac: s.tabac, age: s.age,
+      duree: s.duree, montant: s.montant,
+      prime: monthly.toFixed(2),
+      prime_annuelle: (monthly * 12).toFixed(2),
+      prime_totale: Math.round(monthly * 12 * dureeAns).toLocaleString('fr-CA')
+    };
+
+    emailjs.send('service_h90jqm8', 'template_ixi5pdg', params)
+      .then(function() {
+        return emailjs.send('service_h90jqm8', 'template_qf1o46p', params);
+      })
+      .then(function() {
+        document.getElementById('page2').classList.remove('active');
+        document.getElementById('page3').classList.add('active');
+        document.getElementById('merci-nom').textContent = nom;
+        for (var i = 0; i < 4; i++) {
+          document.getElementById('dot'+i).classList.remove('active');
+          document.getElementById('dot'+i).classList.add('done');
+        }
+        window.scrollTo({top:0, behavior:'smooth'});
+      })
+      .catch(function(err) {
+        console.error('EmailJS error:', err);
+        errDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Voir mon prix et recevoir ma proposition →';
+      });
+  }
+</script>
+</body>
+</html>
